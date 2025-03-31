@@ -107,4 +107,8 @@
   .cursor {
     @apply w-0.5 h-[1.2em] bg-white inline-block align-middle animate-cursor-blink;
   }
+
+  .agent-cursor {
+    @apply w-0.5 h-[1.2em] bg-green-500 inline-block align-middle animate-pulse;
+  }
 }

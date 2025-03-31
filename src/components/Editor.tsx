@@ -165,15 +165,79 @@ const highlightSyntax = (code: string, language: string): React.ReactNode[] => {
 
 const Editor: React.FC<EditorProps> = ({ content, language }) => {
   const [highlightedContent, setHighlightedContent] = useState<React.ReactNode[]>([]);
+  const [suggestion, setSuggestion] = useState<string>('');
+  const [showSuggestion, setShowSuggestion] = useState<boolean>(false);
+  const [cursorPosition, setCursorPosition] = useState<{line: number, col: number}>({line: 0, col: 0});
+  
+  // Simulate typing effect with the agent cursor
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (Math.random() > 0.7) {
+        // Randomly show code suggestions based on language
+        const suggestions = {
+          'typescript': ['interface', 'function', 'const', 'export default', 'useState', 'useEffect'],
+          'javascript': ['function', 'const', 'let', 'console.log', 'return', 'if (condition) {'],
+          'css': ['.class {', 'display: flex;', 'margin: 0 auto;', 'padding: 1rem;'],
+          'json': ['{\n  "key": "value"\n}', '"dependencies": {', '"scripts": {']
+        };
+        
+        const langSuggestions = suggestions[language as keyof typeof suggestions] || suggestions['javascript'];
+        const randomSuggestion = langSuggestions[Math.floor(Math.random() * langSuggestions.length)];
+        
+        setSuggestion(randomSuggestion);
+        setShowSuggestion(true);
+        
+        // Hide suggestion after 3 seconds
+        setTimeout(() => {
+          setShowSuggestion(false);
+        }, 3000);
+      }
+    }, 5000); // Show suggestions every 5 seconds
+    
+    return () => clearTimeout(timer);
+  }, [language, showSuggestion]);
+  
+  // Update cursor position randomly to simulate movement
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const lines = content.split('\n');
+      const randomLine = Math.floor(Math.random() * lines.length);
+      const randomCol = Math.floor(Math.random() * (lines[randomLine].length + 1));
+      
+      setCursorPosition({
+        line: randomLine,
+        col: randomCol
+      });
+    }, 8000); // Move cursor every 8 seconds
+    
+    return () => clearInterval(timer);
+  }, [content]);
   
   useEffect(() => {
     setHighlightedContent(highlightSyntax(content, language));
   }, [content, language]);
   
   return (
-    <div className="h-full overflow-auto font-mono text-sm">
+    <div className="h-full overflow-auto font-mono text-sm relative">
       <div className="min-h-full py-2">
         {highlightedContent}
+        
+        {/* Agent cursor with suggestion */}
+        {showSuggestion && (
+          <div 
+            className="absolute bg-editor-background border border-primary rounded-md p-1 shadow-lg z-10"
+            style={{ 
+              top: `${cursorPosition.line * 24 + 40}px`, 
+              left: `${cursorPosition.col * 8 + 60}px`
+            }}
+          >
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs opacity-70">Agent suggests:</span>
+            </div>
+            <div className="text-primary font-mono mt-1">{suggestion}</div>
+          </div>
+        )}
       </div>
     </div>
   );

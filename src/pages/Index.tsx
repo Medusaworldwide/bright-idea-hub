@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Editor from '@/components/Editor';
 import Tabs from '@/components/Tabs';
 import StatusBar from '@/components/StatusBar';
-import { FileText } from 'lucide-react';
+import Terminal from '@/components/Terminal';
+import { FileText, Terminal as TerminalIcon } from 'lucide-react';
 
 // Sample code for the editor
 const sampleTSCode = `import React, { useState, useEffect } from 'react';
@@ -158,6 +158,7 @@ const Index = () => {
   ]);
   
   const [activeTab, setActiveTab] = useState<string>('tab1');
+  const [terminalVisible, setTerminalVisible] = useState<boolean>(false);
   
   const handleTabChange = (id: string) => {
     setActiveTab(id);
@@ -174,9 +175,12 @@ const Index = () => {
     }
   };
   
+  const toggleTerminal = () => {
+    setTerminalVisible(prev => !prev);
+  };
+  
   const activeFile = tabs.find(tab => tab.id === activeTab) || tabs[0];
   
-  // Get the number of lines in the active file
   const lineCount = activeFile.content.split('\n').length;
   
   return (
@@ -194,20 +198,30 @@ const Index = () => {
             onTabClose={handleTabClose}
           />
           
-          <div className="flex-1 overflow-hidden">
+          <div className={`flex-1 ${terminalVisible ? 'h-[calc(100%-16rem)]' : 'h-full'} overflow-hidden`}>
             <Editor 
               content={activeFile.content}
               language={activeFile.language}
             />
           </div>
           
+          <Terminal visible={terminalVisible} />
+          
           <StatusBar 
             language={activeFile.language}
             lineCount={lineCount}
             currentLine={1}
+            branch="main"
           />
         </div>
       </div>
+      
+      <button 
+        className="absolute bottom-8 right-8 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+        onClick={toggleTerminal}
+      >
+        <TerminalIcon size={20} />
+      </button>
     </div>
   );
 };

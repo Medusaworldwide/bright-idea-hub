@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GitBranch, Wifi, Bell } from 'lucide-react';
+import { GitBranch, Wifi, Bell, Terminal } from 'lucide-react';
 
 interface StatusBarProps {
   language: string;
