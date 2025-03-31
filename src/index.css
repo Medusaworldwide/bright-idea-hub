@@ -14,7 +14,7 @@
     --popover: 225 27% 12%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 187 100% 65%; /* Cursor-like teal color */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -43,6 +43,17 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 225 20% 15%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    --editor-background: 225 27% 12%;
+    --editor-foreground: 210 40% 98%;
+    --editor-line: 225 20% 15%;
+    --editor-keyword: 326 100% 74%;
+    --editor-string: 130 43% 74%;
+    --editor-comment: 220 13% 54%;
+    --editor-function: 194 100% 74%;
+    --editor-number: 32 100% 74%;
+    --editor-operator: 220 70% 75%;
+    --editor-type: 230 100% 87%;
   }
 
   * {

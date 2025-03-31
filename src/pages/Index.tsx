@@ -160,7 +160,7 @@ const Index = () => {
   
   const [activeTab, setActiveTab] = useState<string>('tab1');
   const [terminalVisible, setTerminalVisible] = useState<boolean>(false);
-  const [editorMode, setEditorMode] = useState<'default' | 'agent'>('default');
+  const [editorMode, setEditorMode] = useState<'default' | 'agent'>('agent');
   
   const handleTabChange = (id: string) => {
     setActiveTab(id);
