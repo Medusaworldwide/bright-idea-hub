@@ -8,6 +8,7 @@ import CommandPalette, { CommandItem } from '@/components/CommandPalette';
 import useCommandPalette from '@/hooks/use-command-palette';
 import { FileText, Terminal as TerminalIcon, SplitSquareVertical, Copy, Save, FileSearch, Trash, Settings, Command } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const sampleTSCode = `import React, { useState, useEffect } from 'react';
 
@@ -276,55 +277,57 @@ const Index = () => {
   const lineCount = activeFile.content.split('\n').length;
   
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <CommandPalette 
-        isOpen={isOpen} 
-        onClose={closeCommandPalette} 
-        commands={commands} 
-      />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-64 flex-shrink-0 overflow-hidden">
-          <Sidebar />
-        </div>
+    <TooltipProvider>
+      <div className="h-screen flex flex-col overflow-hidden">
+        <CommandPalette 
+          isOpen={isOpen} 
+          onClose={closeCommandPalette} 
+          commands={commands} 
+        />
         
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Tabs 
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            onTabClose={handleTabClose}
-          />
-          
-          <div className={`flex-1 ${terminalVisible ? 'h-[calc(100%-16rem)]' : 'h-full'} overflow-hidden`}>
-            <Editor 
-              content={activeFile.content}
-              language={activeFile.language}
-              mode={editorMode}
-            />
+        <div className="flex flex-1 overflow-hidden">
+          <div className="w-64 flex-shrink-0 overflow-hidden">
+            <Sidebar />
           </div>
           
-          <Terminal visible={terminalVisible} />
-          
-          <StatusBar 
-            language={activeFile.language}
-            lineCount={lineCount}
-            currentLine={1}
-            branch="main"
-            editorMode={editorMode}
-            onModeChange={handleModeChange}
-          />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Tabs 
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              onTabClose={handleTabClose}
+            />
+            
+            <div className={`flex-1 ${terminalVisible ? 'h-[calc(100%-16rem)]' : 'h-full'} overflow-hidden`}>
+              <Editor 
+                content={activeFile.content}
+                language={activeFile.language}
+                mode={editorMode}
+              />
+            </div>
+            
+            <Terminal visible={terminalVisible} />
+            
+            <StatusBar 
+              language={activeFile.language}
+              lineCount={lineCount}
+              currentLine={1}
+              branch="main"
+              editorMode={editorMode}
+              onModeChange={handleModeChange}
+            />
+          </div>
         </div>
+        
+        <button 
+          className="absolute bottom-8 right-8 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+          onClick={toggleCommandPalette}
+          title="Open Command Palette (Ctrl+K)"
+        >
+          <Command size={20} />
+        </button>
       </div>
-      
-      <button 
-        className="absolute bottom-8 right-8 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
-        onClick={toggleCommandPalette}
-        title="Open Command Palette (Ctrl+K)"
-      >
-        <Command size={20} />
-      </button>
-    </div>
+    </TooltipProvider>
   );
 };
 
