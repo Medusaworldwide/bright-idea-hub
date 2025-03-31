@@ -6,7 +6,7 @@ import StatusBar from '@/components/StatusBar';
 import Terminal from '@/components/Terminal';
 import CommandPalette, { CommandItem } from '@/components/CommandPalette';
 import useCommandPalette from '@/hooks/use-command-palette';
-import { FileText, Terminal as TerminalIcon, SplitSquareVertical, Copy, Save, FileSearch, Trash, Settings } from 'lucide-react';
+import { FileText, Terminal as TerminalIcon, SplitSquareVertical, Copy, Save, FileSearch, Trash, Settings, Command } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const sampleTSCode = `import React, { useState, useEffect } from 'react';
