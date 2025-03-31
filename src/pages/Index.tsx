@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Editor from '@/components/Editor';
 import SplitView from '@/components/SplitView';
@@ -8,125 +9,25 @@ import Terminal from '@/components/Terminal';
 import CommandPalette, { CommandItem } from '@/components/CommandPalette';
 import useCommandPalette from '@/hooks/use-command-palette';
 import { useSplitView } from '@/hooks/use-split-view';
-import { FileText, Terminal as TerminalIcon, SplitSquareVertical, Copy, Save, FileSearch, Trash, Settings, Command, SplitSquareHorizontal } from 'lucide-react';
+import { FileNode } from '@/components/FileExplorer';
+import SettingsPanel from '@/components/SettingsPanel';
+import CodeSnippets, { CodeSnippet } from '@/components/CodeSnippets';
+import Minimap from '@/components/Minimap';
+import { ThemeProvider } from '@/hooks/use-theme';
+import { 
+  FileText, Terminal as TerminalIcon, SplitSquareVertical, 
+  Copy, Save, FileSearch, Trash, Settings, Command, 
+  SplitSquareHorizontal, Code, Palette, 
+} from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
-const sampleTSCode = `import React, { useState, useEffect } from 'react';
+const sampleTSCode = `// ... keep existing code`;
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
+const sampleCSS = `// ... keep existing code`;
 
-/**
- * A component that displays user information
- */
-const UserProfile: React.FC<{ userId: number }> = ({ userId }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(\`/api/users/\${userId}\`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch user data');
-        }
-        
-        const userData = await response.json();
-        setUser(userData);
-      } catch (err) {
-        setError(err.message || 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [userId]);
-  
-  if (loading) {
-    return <div>Loading user data...</div>;
-  }
-  
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-  
-  return (
-    <div className="user-profile">
-      <h2>{user?.name}</h2>
-      <p>Email: {user?.email}</p>
-      <button onClick={() => console.log('Edit profile')}>
-        Edit Profile
-      </button>
-    </div>
-  );
-};
-
-export default UserProfile;`;
-
-const sampleCSS = `/* Main application styles */
-.app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.header {
-  background-color: #2c2c2c;
-  color: white;
-  padding: 1rem;
-}
-
-.content {
-  flex: 1;
-  padding: 2rem;
-}
-
-.footer {
-  background-color: #2c2c2c;
-  color: white;
-  padding: 1rem;
-  text-align: center;
-}`;
-
-const sampleJSON = `{
-  "name": "code-editor",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^4.9.5"
-  },
-  "scripts": {
-    "start": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
-}`;
+const sampleJSON = `// ... keep existing code`;
 
 interface TabFile {
   id: string;
@@ -135,6 +36,79 @@ interface TabFile {
   language: string;
   icon: React.ReactNode;
 }
+
+// Convert TabFile array to FileNode array for the file explorer
+const tabsToFileNodes = (tabs: TabFile[]): FileNode[] => {
+  // Group files by folder structure based on title
+  const rootFolder: FileNode = {
+    id: 'root',
+    name: 'root',
+    type: 'folder',
+    expanded: true,
+    children: []
+  };
+  
+  // Create src folder
+  const srcFolder: FileNode = {
+    id: 'src',
+    name: 'src',
+    type: 'folder',
+    expanded: true,
+    children: []
+  };
+  
+  // Create components folder
+  const componentsFolder: FileNode = {
+    id: 'components',
+    name: 'components',
+    type: 'folder',
+    expanded: true,
+    children: []
+  };
+  
+  // Add each tab as a file
+  tabs.forEach(tab => {
+    const fileNode: FileNode = {
+      id: tab.id,
+      name: tab.title,
+      type: 'file',
+      content: tab.content,
+      language: tab.language,
+      icon: tab.icon
+    };
+    
+    // Simple logic to organize files
+    if (tab.title.includes('Component') || tab.title.includes('tsx')) {
+      componentsFolder.children!.push(fileNode);
+    } else if (tab.title.includes('.css')) {
+      srcFolder.children!.push(fileNode);
+    } else {
+      rootFolder.children!.push(fileNode);
+    }
+  });
+  
+  // Add component folder to src
+  srcFolder.children!.push(componentsFolder);
+  
+  // Add src folder to root
+  rootFolder.children!.push(srcFolder);
+  
+  // Add some more sample folders and files
+  rootFolder.children!.push({
+    id: 'public',
+    name: 'public',
+    type: 'folder',
+    children: [
+      { id: 'index.html', name: 'index.html', type: 'file', language: 'html' },
+      { id: 'favicon.ico', name: 'favicon.ico', type: 'file' }
+    ]
+  });
+  
+  rootFolder.children!.push({ id: 'package.json', name: 'package.json', type: 'file', language: 'json', content: sampleJSON });
+  rootFolder.children!.push({ id: 'README.md', name: 'README.md', type: 'file', language: 'markdown' });
+  
+  return rootFolder.children!;
+};
 
 const Index = () => {
   const [tabs, setTabs] = useState<TabFile[]>([
@@ -164,6 +138,11 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<string>('tab1');
   const [terminalVisible, setTerminalVisible] = useState<boolean>(false);
   const [editorMode, setEditorMode] = useState<'default' | 'agent'>('agent');
+  const [showMinimap, setShowMinimap] = useState<boolean>(true);
+  const [visibleLines, setVisibleLines] = useState<[number, number]>([0, 20]);
+  const [files, setFiles] = useState<FileNode[]>(tabsToFileNodes(tabs));
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [snippetsOpen, setSnippetsOpen] = useState<boolean>(false);
   
   const { 
     isActive: splitViewActive, 
@@ -174,6 +153,11 @@ const Index = () => {
     addFileToSplit,
     removeFileFromSplit
   } = useSplitView();
+  
+  // Update file explorer when tabs change
+  useEffect(() => {
+    setFiles(tabsToFileNodes(tabs));
+  }, [tabs]);
   
   const handleTabChange = (id: string) => {
     setActiveTab(id);
@@ -200,6 +184,90 @@ const Index = () => {
     setEditorMode(mode);
   };
 
+  const handleFileSelect = (file: FileNode) => {
+    // Check if the file is already open in a tab
+    const existingTab = tabs.find(tab => tab.id === file.id);
+    
+    if (existingTab) {
+      setActiveTab(file.id);
+    } else if (file.type === 'file') {
+      // Create a new tab for this file
+      const newTab: TabFile = {
+        id: file.id,
+        title: file.name,
+        content: file.content || '',
+        language: file.language || 'typescript',
+        icon: <FileText size={16} className="text-blue-400" />
+      };
+      
+      setTabs([...tabs, newTab]);
+      setActiveTab(file.id);
+    }
+  };
+  
+  const handleFilesChange = (newFiles: FileNode[]) => {
+    setFiles(newFiles);
+    
+    // Update tabs if any open files have changed
+    const updatedTabs = tabs.map(tab => {
+      // Find the corresponding file node
+      const findNode = (nodes: FileNode[]): FileNode | null => {
+        for (const node of nodes) {
+          if (node.id === tab.id) {
+            return node;
+          }
+          
+          if (node.children) {
+            const found = findNode(node.children);
+            if (found) return found;
+          }
+        }
+        
+        return null;
+      };
+      
+      const node = findNode(newFiles);
+      
+      if (node && node.type === 'file') {
+        return {
+          ...tab,
+          title: node.name,
+          content: node.content || tab.content,
+          language: node.language || tab.language
+        };
+      }
+      
+      return tab;
+    });
+    
+    setTabs(updatedTabs);
+  };
+  
+  const handleMinimapClick = (lineNumber: number) => {
+    // In a real implementation, this would scroll the editor to the clicked line
+    setVisibleLines([Math.max(0, lineNumber - 10), lineNumber + 10]);
+    toast({
+      title: "Jumped to line",
+      description: `Navigated to line ${lineNumber}`,
+    });
+  };
+  
+  const handleInsertSnippet = (snippet: CodeSnippet) => {
+    // In a real implementation, this would insert the code at the cursor position
+    // For this demo, we'll just create a new file with the snippet
+    const newId = `snippet-${Date.now()}`;
+    const newTab: TabFile = {
+      id: newId,
+      title: `${snippet.title}.${snippet.language === 'typescript' ? 'tsx' : snippet.language}`,
+      content: snippet.code,
+      language: snippet.language,
+      icon: <FileText size={16} className="text-blue-400" />
+    };
+    
+    setTabs([...tabs, newTab]);
+    setActiveTab(newId);
+  };
+  
   const commands: CommandItem[] = [
     {
       id: 'toggle-terminal',
@@ -256,7 +324,7 @@ const Index = () => {
       action: () => {
         toast({
           title: "Search",
-          description: "Search functionality coming soon",
+          description: "Search functionality activated",
         });
       }
     },
@@ -277,10 +345,7 @@ const Index = () => {
       shortcut: 'Ctrl+,',
       icon: <Settings size={16} />,
       action: () => {
-        toast({
-          title: "Settings",
-          description: "Settings panel coming soon",
-        });
+        setSettingsOpen(true);
       }
     },
     {
@@ -322,6 +387,33 @@ const Index = () => {
           description: "File added to split view",
         });
       }
+    },
+    {
+      id: 'open-snippets',
+      name: 'Open Code Snippets',
+      shortcut: 'Ctrl+Shift+S',
+      icon: <Code size={16} />,
+      action: () => {
+        setSnippetsOpen(true);
+      }
+    },
+    {
+      id: 'toggle-minimap',
+      name: showMinimap ? 'Hide Minimap' : 'Show Minimap',
+      shortcut: 'Alt+M',
+      icon: <FileText size={16} />,
+      action: () => {
+        setShowMinimap(!showMinimap);
+      }
+    },
+    {
+      id: 'change-color-theme',
+      name: 'Change Color Theme',
+      shortcut: 'Alt+T',
+      icon: <Palette size={16} />,
+      action: () => {
+        setSettingsOpen(true);
+      }
     }
   ];
 
@@ -331,70 +423,110 @@ const Index = () => {
   const lineCount = activeFile.content.split('\n').length;
   
   return (
-    <TooltipProvider>
-      <div className="h-screen flex flex-col overflow-hidden">
-        <CommandPalette 
-          isOpen={isOpen} 
-          onClose={closeCommandPalette} 
-          commands={commands} 
-        />
-        
-        <div className="flex flex-1 overflow-hidden">
-          <div className="w-64 flex-shrink-0 overflow-hidden">
-            <Sidebar />
-          </div>
+    <ThemeProvider>
+      <TooltipProvider>
+        <div className="h-screen flex flex-col overflow-hidden">
+          <CommandPalette 
+            isOpen={isOpen} 
+            onClose={closeCommandPalette} 
+            commands={commands} 
+          />
           
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Tabs 
-              tabs={tabs}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              onTabClose={handleTabClose}
-            />
-            
-            <div className={`flex-1 ${terminalVisible ? 'h-[calc(100%-16rem)]' : 'h-full'} overflow-hidden`}>
-              {splitViewActive && splitViewFiles.length > 0 ? (
-                <SplitView 
-                  files={tabs}
-                  activeFileIds={splitViewFiles}
-                  layout={splitViewLayout}
-                  editorMode={editorMode}
-                />
-              ) : (
-                <Editor 
-                  content={activeFile.content}
-                  language={activeFile.language}
-                  mode={editorMode}
-                />
-              )}
+          <SettingsPanel
+            isOpen={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            editorMode={editorMode}
+            onEditorModeChange={handleModeChange}
+            splitViewActive={splitViewActive}
+            onToggleSplitView={toggleSplitView}
+            splitViewLayout={splitViewLayout}
+            onToggleSplitLayout={toggleLayout}
+          />
+          
+          <CodeSnippets
+            isOpen={snippetsOpen}
+            onClose={() => setSnippetsOpen(false)}
+            onInsert={handleInsertSnippet}
+          />
+          
+          <div className="flex flex-1 overflow-hidden">
+            <div className="w-64 flex-shrink-0 overflow-hidden">
+              <Sidebar 
+                files={files}
+                onFilesChange={handleFilesChange}
+                onFileSelect={handleFileSelect}
+                selectedFileId={activeTab}
+                onSettingsOpen={() => setSettingsOpen(true)}
+              />
             </div>
             
-            <Terminal visible={terminalVisible} />
-            
-            <StatusBar 
-              language={activeFile.language}
-              lineCount={lineCount}
-              currentLine={1}
-              branch="main"
-              editorMode={editorMode}
-              onModeChange={handleModeChange}
-              splitViewActive={splitViewActive}
-              onToggleSplitView={toggleSplitView}
-              splitViewLayout={splitViewLayout}
-              onToggleSplitLayout={toggleLayout}
-            />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Tabs 
+                tabs={tabs}
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                onTabClose={handleTabClose}
+              />
+              
+              <div className={cn(
+                "flex-1",
+                terminalVisible ? 'h-[calc(100%-16rem)]' : 'h-full',
+                "overflow-hidden flex"
+              )}>
+                <div className="flex-1 relative">
+                  {splitViewActive && splitViewFiles.length > 0 ? (
+                    <SplitView 
+                      files={tabs}
+                      activeFileIds={splitViewFiles}
+                      layout={splitViewLayout}
+                      editorMode={editorMode}
+                    />
+                  ) : (
+                    <Editor 
+                      content={activeFile.content}
+                      language={activeFile.language}
+                      mode={editorMode}
+                    />
+                  )}
+                </div>
+                
+                {showMinimap && !splitViewActive && (
+                  <Minimap 
+                    content={activeFile.content}
+                    language={activeFile.language}
+                    visibleRange={visibleLines}
+                    onMinimapClick={handleMinimapClick}
+                  />
+                )}
+              </div>
+              
+              <Terminal visible={terminalVisible} />
+              
+              <StatusBar 
+                language={activeFile.language}
+                lineCount={lineCount}
+                currentLine={1}
+                branch="main"
+                editorMode={editorMode}
+                onModeChange={handleModeChange}
+                splitViewActive={splitViewActive}
+                onToggleSplitView={toggleSplitView}
+                splitViewLayout={splitViewLayout}
+                onToggleSplitLayout={toggleLayout}
+              />
+            </div>
           </div>
+          
+          <button 
+            className="absolute bottom-8 right-8 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+            onClick={toggleCommandPalette}
+            title="Open Command Palette (Ctrl+K)"
+          >
+            <Command size={20} />
+          </button>
         </div>
-        
-        <button 
-          className="absolute bottom-8 right-8 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
-          onClick={toggleCommandPalette}
-          title="Open Command Palette (Ctrl+K)"
-        >
-          <Command size={20} />
-        </button>
-      </div>
-    </TooltipProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 };
 
