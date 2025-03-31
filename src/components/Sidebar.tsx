@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { File, FolderOpen, Settings, Search, GitBranch, Package, Play, BookOpen } from 'lucide-react';
 import FileExplorer, { FileNode } from './FileExplorer';
 import SearchFiles from './SearchFiles';
+import GitPanel from './GitPanel';
 import { toast } from '@/hooks/use-toast';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSettingsOpen
 }) => {
   const [activeTab, setActiveTab] = useState<SidebarTab>('explorer');
+  const [currentBranch, setCurrentBranch] = useState('main');
 
   const handleResultClick = (fileId: string, lineNumber: number) => {
     // Find the file node by id
@@ -50,6 +52,21 @@ const Sidebar: React.FC<SidebarProps> = ({
         description: `${fileNode.name}, line ${lineNumber}`,
       });
     }
+  };
+
+  const handleCommit = (message: string) => {
+    toast({
+      title: "Commit created",
+      description: `"${message}" committed to ${currentBranch}`,
+    });
+  };
+
+  const handleBranchChange = (branch: string) => {
+    setCurrentBranch(branch);
+    toast({
+      title: "Branch changed",
+      description: `Switched to ${branch}`,
+    });
   };
 
   return (
@@ -114,16 +131,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
         
         {activeTab === 'git' && (
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm uppercase font-semibold">Source Control</h2>
-            </div>
-            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-              <GitBranch size={32} className="mb-2" />
-              <p className="text-sm">No changes detected</p>
-              <p className="text-xs mt-1">Current branch: main</p>
-            </div>
-          </div>
+          <GitPanel
+            onCommit={handleCommit}
+            onBranchChange={handleBranchChange}
+          />
         )}
         
         {activeTab === 'extensions' && (

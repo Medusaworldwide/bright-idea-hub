@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Editor from '@/components/Editor';
@@ -17,7 +16,7 @@ import { ThemeProvider } from '@/hooks/use-theme';
 import { 
   FileText, Terminal as TerminalIcon, SplitSquareVertical, 
   Copy, Save, FileSearch, Trash, Settings, Command, 
-  SplitSquareHorizontal, Code, Palette, 
+  SplitSquareHorizontal, Code, Palette, GitBranch, GitCommit 
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -37,9 +36,7 @@ interface TabFile {
   icon: React.ReactNode;
 }
 
-// Convert TabFile array to FileNode array for the file explorer
 const tabsToFileNodes = (tabs: TabFile[]): FileNode[] => {
-  // Group files by folder structure based on title
   const rootFolder: FileNode = {
     id: 'root',
     name: 'root',
@@ -48,7 +45,6 @@ const tabsToFileNodes = (tabs: TabFile[]): FileNode[] => {
     children: []
   };
   
-  // Create src folder
   const srcFolder: FileNode = {
     id: 'src',
     name: 'src',
@@ -57,7 +53,6 @@ const tabsToFileNodes = (tabs: TabFile[]): FileNode[] => {
     children: []
   };
   
-  // Create components folder
   const componentsFolder: FileNode = {
     id: 'components',
     name: 'components',
@@ -66,7 +61,6 @@ const tabsToFileNodes = (tabs: TabFile[]): FileNode[] => {
     children: []
   };
   
-  // Add each tab as a file
   tabs.forEach(tab => {
     const fileNode: FileNode = {
       id: tab.id,
@@ -77,7 +71,6 @@ const tabsToFileNodes = (tabs: TabFile[]): FileNode[] => {
       icon: tab.icon
     };
     
-    // Simple logic to organize files
     if (tab.title.includes('Component') || tab.title.includes('tsx')) {
       componentsFolder.children!.push(fileNode);
     } else if (tab.title.includes('.css')) {
@@ -87,13 +80,10 @@ const tabsToFileNodes = (tabs: TabFile[]): FileNode[] => {
     }
   });
   
-  // Add component folder to src
   srcFolder.children!.push(componentsFolder);
   
-  // Add src folder to root
   rootFolder.children!.push(srcFolder);
   
-  // Add some more sample folders and files
   rootFolder.children!.push({
     id: 'public',
     name: 'public',
@@ -143,6 +133,7 @@ const Index = () => {
   const [files, setFiles] = useState<FileNode[]>(tabsToFileNodes(tabs));
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [snippetsOpen, setSnippetsOpen] = useState<boolean>(false);
+  const [currentBranch, setCurrentBranch] = useState<string>('main');
   
   const { 
     isActive: splitViewActive, 
@@ -154,7 +145,6 @@ const Index = () => {
     removeFileFromSplit
   } = useSplitView();
   
-  // Update file explorer when tabs change
   useEffect(() => {
     setFiles(tabsToFileNodes(tabs));
   }, [tabs]);
@@ -185,13 +175,11 @@ const Index = () => {
   };
 
   const handleFileSelect = (file: FileNode) => {
-    // Check if the file is already open in a tab
     const existingTab = tabs.find(tab => tab.id === file.id);
     
     if (existingTab) {
       setActiveTab(file.id);
     } else if (file.type === 'file') {
-      // Create a new tab for this file
       const newTab: TabFile = {
         id: file.id,
         title: file.name,
@@ -208,9 +196,7 @@ const Index = () => {
   const handleFilesChange = (newFiles: FileNode[]) => {
     setFiles(newFiles);
     
-    // Update tabs if any open files have changed
     const updatedTabs = tabs.map(tab => {
-      // Find the corresponding file node
       const findNode = (nodes: FileNode[]): FileNode | null => {
         for (const node of nodes) {
           if (node.id === tab.id) {
@@ -244,7 +230,6 @@ const Index = () => {
   };
   
   const handleMinimapClick = (lineNumber: number) => {
-    // In a real implementation, this would scroll the editor to the clicked line
     setVisibleLines([Math.max(0, lineNumber - 10), lineNumber + 10]);
     toast({
       title: "Jumped to line",
@@ -253,8 +238,6 @@ const Index = () => {
   };
   
   const handleInsertSnippet = (snippet: CodeSnippet) => {
-    // In a real implementation, this would insert the code at the cursor position
-    // For this demo, we'll just create a new file with the snippet
     const newId = `snippet-${Date.now()}`;
     const newTab: TabFile = {
       id: newId,
@@ -268,6 +251,12 @@ const Index = () => {
     setActiveTab(newId);
   };
   
+  const handleEditorContentChange = (fileId: string, newContent: string) => {
+    setTabs(tabs.map(tab => 
+      tab.id === fileId ? { ...tab, content: newContent } : tab
+    ));
+  };
+
   const commands: CommandItem[] = [
     {
       id: 'toggle-terminal',
@@ -414,6 +403,30 @@ const Index = () => {
       action: () => {
         setSettingsOpen(true);
       }
+    },
+    {
+      id: 'git-commit',
+      name: 'Git: Commit',
+      shortcut: 'Ctrl+Shift+G C',
+      icon: <GitCommit size={16} />,
+      action: () => {
+        toast({
+          title: "Git Commit",
+          description: "Opening Git panel for commit",
+        });
+      }
+    },
+    {
+      id: 'git-branch',
+      name: 'Git: Switch Branch',
+      shortcut: 'Ctrl+Shift+G B',
+      icon: <GitBranch size={16} />,
+      action: () => {
+        toast({
+          title: "Git Branch",
+          description: "Opening branch switcher",
+        });
+      }
     }
   ];
 
@@ -480,12 +493,14 @@ const Index = () => {
                       activeFileIds={splitViewFiles}
                       layout={splitViewLayout}
                       editorMode={editorMode}
+                      onContentChange={handleEditorContentChange}
                     />
                   ) : (
                     <Editor 
                       content={activeFile.content}
                       language={activeFile.language}
                       mode={editorMode}
+                      onChange={(content) => handleEditorContentChange(activeFile.id, content)}
                     />
                   )}
                 </div>
@@ -506,7 +521,7 @@ const Index = () => {
                 language={activeFile.language}
                 lineCount={lineCount}
                 currentLine={1}
-                branch="main"
+                branch={currentBranch}
                 editorMode={editorMode}
                 onModeChange={handleModeChange}
                 splitViewActive={splitViewActive}

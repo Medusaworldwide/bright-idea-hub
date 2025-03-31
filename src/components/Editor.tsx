@@ -1,11 +1,12 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Zap } from 'lucide-react';
+import CodeCompletion from './CodeCompletion';
 
 interface EditorProps {
   content: string;
   language: string;
   mode: 'default' | 'agent';
+  onChange?: (content: string) => void;
 }
 
 // Simple syntax highlighter
@@ -165,12 +166,20 @@ const highlightSyntax = (code: string, language: string): React.ReactNode[] => {
   ));
 };
 
-const Editor: React.FC<EditorProps> = ({ content, language, mode }) => {
+const Editor: React.FC<EditorProps> = ({ content, language, mode, onChange }) => {
   const [highlightedContent, setHighlightedContent] = useState<React.ReactNode[]>([]);
   const [suggestion, setSuggestion] = useState<string>('');
   const [showSuggestion, setShowSuggestion] = useState<boolean>(false);
   const [cursorPosition, setCursorPosition] = useState<{line: number, col: number}>({line: 0, col: 0});
   const [agentMessage, setAgentMessage] = useState<string | null>(null);
+  const [editorContent, setEditorContent] = useState(content);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+  
+  // Update editor content when the prop changes
+  useEffect(() => {
+    setEditorContent(content);
+  }, [content]);
   
   // Simulate typing effect with the agent cursor
   useEffect(() => {
@@ -220,7 +229,7 @@ const Editor: React.FC<EditorProps> = ({ content, language, mode }) => {
     if (mode !== 'agent') return;
     
     const timer = setInterval(() => {
-      const lines = content.split('\n');
+      const lines = editorContent.split('\n');
       const randomLine = Math.floor(Math.random() * lines.length);
       const randomCol = Math.floor(Math.random() * (lines[randomLine].length + 1));
       
@@ -231,16 +240,84 @@ const Editor: React.FC<EditorProps> = ({ content, language, mode }) => {
     }, 8000); // Move cursor every 8 seconds
     
     return () => clearInterval(timer);
-  }, [content, mode]);
+  }, [editorContent, mode]);
   
   useEffect(() => {
-    setHighlightedContent(highlightSyntax(content, language));
-  }, [content, language]);
+    setHighlightedContent(highlightSyntax(editorContent, language));
+  }, [editorContent, language]);
+  
+  // Trigger code completion
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (mode === 'default' && e.key === 'Control') {
+      // Show code completion on Ctrl key (just as an example trigger)
+      setShowCompletion(true);
+    }
+  };
+  
+  const handleKeyUp = (e: React.KeyboardEvent) => {
+    if (mode === 'default' && e.key === 'Control') {
+      // This is just for demonstration. In a real editor, completion would be triggered
+      // by specific key combinations or when typing specific characters
+      setTimeout(() => setShowCompletion(false), 5000);
+    }
+  };
+  
+  const handleAcceptCompletion = (completion: string) => {
+    // In a real implementation, this would insert the completion at the cursor position
+    const lines = editorContent.split('\n');
+    const currentLine = lines[cursorPosition.line];
+    const textBeforeCursor = currentLine.substring(0, cursorPosition.col);
+    const textAfterCursor = currentLine.substring(cursorPosition.col);
+    
+    // Find the partial word before cursor
+    const lastWordMatch = textBeforeCursor.match(/[a-zA-Z0-9_]+$/);
+    const lastWord = lastWordMatch ? lastWordMatch[0] : '';
+    const startPos = textBeforeCursor.length - lastWord.length;
+    
+    // Replace the partial word with the complete suggestion
+    const newLine = textBeforeCursor.substring(0, startPos) + completion + textAfterCursor;
+    lines[cursorPosition.line] = newLine;
+    
+    const newContent = lines.join('\n');
+    setEditorContent(newContent);
+    setShowCompletion(false);
+    
+    if (onChange) {
+      onChange(newContent);
+    }
+  };
+  
+  const handleDismissCompletion = () => {
+    setShowCompletion(false);
+  };
   
   return (
-    <div className="h-full overflow-auto font-mono text-sm relative">
+    <div 
+      className="h-full overflow-auto font-mono text-sm relative"
+      ref={editorRef}
+      onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
+      tabIndex={0}
+    >
       <div className="min-h-full py-2">
         {highlightedContent}
+        
+        {/* Code completion popup */}
+        {mode === 'default' && showCompletion && (
+          <div style={{ 
+            position: 'absolute', 
+            top: `${cursorPosition.line * 24 + 40}px`, 
+            left: `${cursorPosition.col * 8 + 60}px`
+          }}>
+            <CodeCompletion
+              language={language}
+              currentText={editorContent}
+              cursorPosition={cursorPosition}
+              onAccept={handleAcceptCompletion}
+              onDismiss={handleDismissCompletion}
+            />
+          </div>
+        )}
         
         {/* Agent cursor with suggestion */}
         {mode === 'agent' && showSuggestion && (
