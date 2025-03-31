@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+import { Zap } from 'lucide-react';
 
 interface EditorProps {
   content: string;
