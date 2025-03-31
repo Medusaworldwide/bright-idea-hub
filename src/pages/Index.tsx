@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Editor from '@/components/Editor';
@@ -159,6 +160,7 @@ const Index = () => {
   
   const [activeTab, setActiveTab] = useState<string>('tab1');
   const [terminalVisible, setTerminalVisible] = useState<boolean>(false);
+  const [editorMode, setEditorMode] = useState<'default' | 'agent'>('default');
   
   const handleTabChange = (id: string) => {
     setActiveTab(id);
@@ -177,6 +179,10 @@ const Index = () => {
   
   const toggleTerminal = () => {
     setTerminalVisible(prev => !prev);
+  };
+  
+  const handleModeChange = (mode: 'default' | 'agent') => {
+    setEditorMode(mode);
   };
   
   const activeFile = tabs.find(tab => tab.id === activeTab) || tabs[0];
@@ -202,6 +208,7 @@ const Index = () => {
             <Editor 
               content={activeFile.content}
               language={activeFile.language}
+              mode={editorMode}
             />
           </div>
           
@@ -212,6 +219,8 @@ const Index = () => {
             lineCount={lineCount}
             currentLine={1}
             branch="main"
+            editorMode={editorMode}
+            onModeChange={handleModeChange}
           />
         </div>
       </div>

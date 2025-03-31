@@ -112,3 +112,23 @@
     @apply w-0.5 h-[1.2em] bg-green-500 inline-block align-middle animate-pulse;
   }
 }
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@layer utilities {
+  .animate-cursor-blink {
+    animation: cursor-blink 1s step-end infinite;
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+}

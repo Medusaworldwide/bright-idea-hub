@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 
 interface EditorProps {
   content: string;
   language: string;
+  mode: 'default' | 'agent';
 }
 
 // Simple syntax highlighter
@@ -163,14 +163,20 @@ const highlightSyntax = (code: string, language: string): React.ReactNode[] => {
   ));
 };
 
-const Editor: React.FC<EditorProps> = ({ content, language }) => {
+const Editor: React.FC<EditorProps> = ({ content, language, mode }) => {
   const [highlightedContent, setHighlightedContent] = useState<React.ReactNode[]>([]);
   const [suggestion, setSuggestion] = useState<string>('');
   const [showSuggestion, setShowSuggestion] = useState<boolean>(false);
   const [cursorPosition, setCursorPosition] = useState<{line: number, col: number}>({line: 0, col: 0});
+  const [agentMessage, setAgentMessage] = useState<string | null>(null);
   
   // Simulate typing effect with the agent cursor
   useEffect(() => {
+    if (mode !== 'agent') {
+      setShowSuggestion(false);
+      return;
+    }
+    
     const timer = setTimeout(() => {
       if (Math.random() > 0.7) {
         // Randomly show code suggestions based on language
@@ -195,10 +201,22 @@ const Editor: React.FC<EditorProps> = ({ content, language }) => {
     }, 5000); // Show suggestions every 5 seconds
     
     return () => clearTimeout(timer);
-  }, [language, showSuggestion]);
+  }, [language, showSuggestion, mode]);
+  
+  // Show agent mode activation message
+  useEffect(() => {
+    if (mode === 'agent') {
+      setAgentMessage('Agent mode activated. AI assistance enabled.');
+      setTimeout(() => {
+        setAgentMessage(null);
+      }, 3000);
+    }
+  }, [mode]);
   
   // Update cursor position randomly to simulate movement
   useEffect(() => {
+    if (mode !== 'agent') return;
+    
     const timer = setInterval(() => {
       const lines = content.split('\n');
       const randomLine = Math.floor(Math.random() * lines.length);
@@ -211,7 +229,7 @@ const Editor: React.FC<EditorProps> = ({ content, language }) => {
     }, 8000); // Move cursor every 8 seconds
     
     return () => clearInterval(timer);
-  }, [content]);
+  }, [content, mode]);
   
   useEffect(() => {
     setHighlightedContent(highlightSyntax(content, language));
@@ -223,7 +241,7 @@ const Editor: React.FC<EditorProps> = ({ content, language }) => {
         {highlightedContent}
         
         {/* Agent cursor with suggestion */}
-        {showSuggestion && (
+        {mode === 'agent' && showSuggestion && (
           <div 
             className="absolute bg-editor-background border border-primary rounded-md p-1 shadow-lg z-10"
             style={{ 
@@ -236,6 +254,16 @@ const Editor: React.FC<EditorProps> = ({ content, language }) => {
               <span className="text-xs opacity-70">Agent suggests:</span>
             </div>
             <div className="text-primary font-mono mt-1">{suggestion}</div>
+          </div>
+        )}
+        
+        {/* Agent mode notification */}
+        {agentMessage && (
+          <div className="absolute top-4 right-4 bg-primary/10 border border-primary text-primary px-3 py-1.5 rounded-md animate-fade-in">
+            <div className="flex items-center space-x-2">
+              <Zap size={14} className="text-primary animate-pulse" />
+              <span className="text-xs">{agentMessage}</span>
+            </div>
           </div>
         )}
       </div>
