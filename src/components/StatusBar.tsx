@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { GitBranch, Wifi, Bell, Terminal, Zap, ChevronDown, KeyboardCommand, Command } from 'lucide-react';
+import { GitBranch, Wifi, Bell, Terminal, Zap, ChevronDown, Command } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   DropdownMenu,
@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Switch } from '@/components/ui/toggle';
+import { Switch } from '@/components/ui/switch';
 
 interface StatusBarProps {
   language: string;
