@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Editor from '@/components/Editor';
+import SplitView from '@/components/SplitView';
 import Tabs from '@/components/Tabs';
 import StatusBar from '@/components/StatusBar';
 import Terminal from '@/components/Terminal';
 import CommandPalette, { CommandItem } from '@/components/CommandPalette';
 import useCommandPalette from '@/hooks/use-command-palette';
-import { FileText, Terminal as TerminalIcon, SplitSquareVertical, Copy, Save, FileSearch, Trash, Settings, Command } from 'lucide-react';
+import { useSplitView } from '@/hooks/use-split-view';
+import { FileText, Terminal as TerminalIcon, SplitSquareVertical, Copy, Save, FileSearch, Trash, Settings, Command, SplitSquareHorizontal } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -163,6 +165,16 @@ const Index = () => {
   const [terminalVisible, setTerminalVisible] = useState<boolean>(false);
   const [editorMode, setEditorMode] = useState<'default' | 'agent'>('agent');
   
+  const { 
+    isActive: splitViewActive, 
+    layout: splitViewLayout, 
+    activeFileIds: splitViewFiles,
+    toggleSplitView,
+    toggleLayout,
+    addFileToSplit,
+    removeFileFromSplit
+  } = useSplitView();
+  
   const handleTabChange = (id: string) => {
     setActiveTab(id);
   };
@@ -175,6 +187,8 @@ const Index = () => {
       if (activeTab === id) {
         setActiveTab(newTabs[0].id);
       }
+      
+      removeFileFromSplit(id);
     }
   };
   
@@ -268,6 +282,46 @@ const Index = () => {
           description: "Settings panel coming soon",
         });
       }
+    },
+    {
+      id: 'toggle-split-view',
+      name: splitViewActive ? 'Disable Split View' : 'Enable Split View',
+      shortcut: 'Alt+S',
+      icon: <SplitSquareVertical size={16} />,
+      action: toggleSplitView
+    },
+    {
+      id: 'toggle-split-layout',
+      name: `Change Split to ${splitViewLayout === 'horizontal' ? 'Vertical' : 'Horizontal'}`,
+      shortcut: 'Alt+L',
+      icon: <SplitSquareHorizontal size={16} />,
+      action: toggleLayout
+    },
+    {
+      id: 'add-to-split-view',
+      name: 'Add Current File to Split View',
+      shortcut: 'Alt+A',
+      icon: <Copy size={16} />,
+      action: () => {
+        if (splitViewFiles.includes(activeTab)) {
+          toast({
+            title: "Already in split view",
+            description: "This file is already in the split view",
+          });
+          return;
+        }
+        
+        addFileToSplit(activeTab);
+        
+        if (!splitViewActive) {
+          toggleSplitView();
+        }
+        
+        toast({
+          title: "Added to split view",
+          description: "File added to split view",
+        });
+      }
     }
   ];
 
@@ -299,11 +353,20 @@ const Index = () => {
             />
             
             <div className={`flex-1 ${terminalVisible ? 'h-[calc(100%-16rem)]' : 'h-full'} overflow-hidden`}>
-              <Editor 
-                content={activeFile.content}
-                language={activeFile.language}
-                mode={editorMode}
-              />
+              {splitViewActive && splitViewFiles.length > 0 ? (
+                <SplitView 
+                  files={tabs}
+                  activeFileIds={splitViewFiles}
+                  layout={splitViewLayout}
+                  editorMode={editorMode}
+                />
+              ) : (
+                <Editor 
+                  content={activeFile.content}
+                  language={activeFile.language}
+                  mode={editorMode}
+                />
+              )}
             </div>
             
             <Terminal visible={terminalVisible} />
@@ -315,6 +378,10 @@ const Index = () => {
               branch="main"
               editorMode={editorMode}
               onModeChange={handleModeChange}
+              splitViewActive={splitViewActive}
+              onToggleSplitView={toggleSplitView}
+              splitViewLayout={splitViewLayout}
+              onToggleSplitLayout={toggleLayout}
             />
           </div>
         </div>
