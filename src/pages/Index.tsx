@@ -1,13 +1,14 @@
-
 import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Editor from '@/components/Editor';
 import Tabs from '@/components/Tabs';
 import StatusBar from '@/components/StatusBar';
 import Terminal from '@/components/Terminal';
-import { FileText, Terminal as TerminalIcon } from 'lucide-react';
+import CommandPalette, { CommandItem } from '@/components/CommandPalette';
+import useCommandPalette from '@/hooks/use-command-palette';
+import { FileText, Terminal as TerminalIcon, SplitSquareVertical, Copy, Save, FileSearch, Trash, Settings } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
-// Sample code for the editor
 const sampleTSCode = `import React, { useState, useEffect } from 'react';
 
 interface User {
@@ -25,7 +26,6 @@ const UserProfile: React.FC<{ userId: number }> = ({ userId }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch user data from the API
     const fetchUser = async () => {
       try {
         const response = await fetch(\`/api/users/\${userId}\`);
@@ -184,13 +184,105 @@ const Index = () => {
   const handleModeChange = (mode: 'default' | 'agent') => {
     setEditorMode(mode);
   };
+
+  const commands: CommandItem[] = [
+    {
+      id: 'toggle-terminal',
+      name: 'Toggle Terminal',
+      shortcut: 'Ctrl+`',
+      icon: <TerminalIcon size={16} />,
+      action: toggleTerminal
+    },
+    {
+      id: 'toggle-editor-mode',
+      name: editorMode === 'default' ? 'Switch to Agent Mode' : 'Switch to Default Mode',
+      shortcut: 'Alt+M',
+      icon: <SplitSquareVertical size={16} />,
+      action: () => handleModeChange(editorMode === 'default' ? 'agent' : 'default')
+    },
+    {
+      id: 'duplicate-file',
+      name: 'Duplicate Current File',
+      shortcut: 'Ctrl+D',
+      icon: <Copy size={16} />,
+      action: () => {
+        const currentTab = tabs.find(tab => tab.id === activeTab);
+        if (currentTab) {
+          const newTab = {
+            ...currentTab,
+            id: `tab${Date.now()}`,
+            title: `Copy of ${currentTab.title}`
+          };
+          setTabs([...tabs, newTab]);
+          toast({
+            title: "File duplicated",
+            description: `Created ${newTab.title}`,
+          });
+        }
+      }
+    },
+    {
+      id: 'save-file',
+      name: 'Save File',
+      shortcut: 'Ctrl+S',
+      icon: <Save size={16} />,
+      action: () => {
+        toast({
+          title: "File saved",
+          description: "Your changes have been saved",
+        });
+      }
+    },
+    {
+      id: 'search-in-file',
+      name: 'Search in File',
+      shortcut: 'Ctrl+F',
+      icon: <FileSearch size={16} />,
+      action: () => {
+        toast({
+          title: "Search",
+          description: "Search functionality coming soon",
+        });
+      }
+    },
+    {
+      id: 'close-current-tab',
+      name: 'Close Current Tab',
+      shortcut: 'Ctrl+W',
+      icon: <Trash size={16} />,
+      action: () => {
+        if (tabs.length > 1) {
+          handleTabClose(activeTab);
+        }
+      }
+    },
+    {
+      id: 'open-settings',
+      name: 'Open Settings',
+      shortcut: 'Ctrl+,',
+      icon: <Settings size={16} />,
+      action: () => {
+        toast({
+          title: "Settings",
+          description: "Settings panel coming soon",
+        });
+      }
+    }
+  ];
+
+  const { isOpen, toggleCommandPalette, closeCommandPalette } = useCommandPalette(commands);
   
   const activeFile = tabs.find(tab => tab.id === activeTab) || tabs[0];
-  
   const lineCount = activeFile.content.split('\n').length;
   
   return (
     <div className="h-screen flex flex-col overflow-hidden">
+      <CommandPalette 
+        isOpen={isOpen} 
+        onClose={closeCommandPalette} 
+        commands={commands} 
+      />
+      
       <div className="flex flex-1 overflow-hidden">
         <div className="w-64 flex-shrink-0 overflow-hidden">
           <Sidebar />
@@ -227,9 +319,10 @@ const Index = () => {
       
       <button 
         className="absolute bottom-8 right-8 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
-        onClick={toggleTerminal}
+        onClick={toggleCommandPalette}
+        title="Open Command Palette (Ctrl+K)"
       >
-        <TerminalIcon size={20} />
+        <Command size={20} />
       </button>
     </div>
   );

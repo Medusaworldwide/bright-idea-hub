@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface StatusBarProps {
   language: string;
@@ -126,6 +126,18 @@ const StatusBar: React.FC<StatusBarProps> = ({
       </div>
       
       <div className="flex items-center space-x-4">
+        <Tooltip>
+          <TooltipTrigger>
+            <div className="flex items-center">
+              <Command size={12} className="mr-1 opacity-70" />
+              <span>Ctrl+K</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">Open Command Palette</p>
+          </TooltipContent>
+        </Tooltip>
+        
         <div>{language}</div>
         <div>UTF-8</div>
         <div>
